@@ -1,11 +1,11 @@
--- =========================================================================
--- PROYECTO: TICKETEXPRESS+ (POSTGRESQL)
--- SCRIPT UNIFICADO DE ESQUEMA, DATOS INICIALES, FUNCIONES, PROCEDIMIENTOS Y TRIGGERS
--- =========================================================================
+-- ============================================================================
+-- Proyecto: TicketExpress+
+-- Actividad: Encapsulamiento de reglas de negocio en PostgreSQL
+-- ============================================================================
 
--- -------------------------------------------------------------------------
--- PARTE 1 (COMPAÑEROS - INTEGRANTE 1 / EQUIPO BASE): SECUENCIAS Y TABLAS
--- -------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------
+-- Estructura base de tablas y secuencias
+-- ----------------------------------------------------------------------------
 CREATE SEQUENCE IF NOT EXISTS seq_pago START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE IF NOT EXISTS seq_tique START WITH 1 INCREMENT BY 1;
 
@@ -24,65 +24,65 @@ CREATE TABLE IF NOT EXISTS recinto (
 );
 
 CREATE TABLE IF NOT EXISTS usuario (
-    idusuario        BIGSERIAL PRIMARY KEY,
-    nombre_completo  VARCHAR(150) NOT NULL,
-    correo           VARCHAR(150) NOT NULL UNIQUE,
-    telefono         VARCHAR(30),
-    fecha_registro   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    idusuario       BIGSERIAL PRIMARY KEY,
+    nombre_completo VARCHAR(150) NOT NULL,
+    correo          VARCHAR(150) NOT NULL UNIQUE,
+    telefono        VARCHAR(30),
+    fecha_registro  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS evento (
-    idevento     BIGSERIAL PRIMARY KEY,
-    idcategoria  BIGINT NOT NULL REFERENCES categoria(idcategoria),
-    idrecinto    BIGINT NOT NULL REFERENCES recinto(idrecinto),
-    titulo       VARCHAR(160) NOT NULL,
-    descripcion  TEXT,
-    estado       VARCHAR(30) NOT NULL DEFAULT 'ACTIVO'
+    idevento    BIGSERIAL PRIMARY KEY,
+    idcategoria BIGINT NOT NULL REFERENCES categoria(idcategoria),
+    idrecinto   BIGINT NOT NULL REFERENCES recinto(idrecinto),
+    titulo      VARCHAR(160) NOT NULL,
+    descripcion TEXT,
+    estado      VARCHAR(30) NOT NULL DEFAULT 'ACTIVO'
 );
 
 CREATE TABLE IF NOT EXISTS funcion (
-    idfuncion    BIGSERIAL PRIMARY KEY,
-    idevento     BIGINT NOT NULL REFERENCES evento(idevento) ON DELETE CASCADE,
-    fecha_hora   TIMESTAMP NOT NULL,
-    estado       VARCHAR(30) NOT NULL DEFAULT 'PROGRAMADA'
+    idfuncion  BIGSERIAL PRIMARY KEY,
+    idevento   BIGINT NOT NULL REFERENCES evento(idevento) ON DELETE CASCADE,
+    fecha_hora TIMESTAMP NOT NULL,
+    estado     VARCHAR(30) NOT NULL DEFAULT 'PROGRAMADA'
 );
 
 CREATE TABLE IF NOT EXISTS asiento (
-    idasiento    BIGSERIAL PRIMARY KEY,
-    idrecinto    BIGINT NOT NULL REFERENCES recinto(idrecinto) ON DELETE CASCADE,
-    zona         VARCHAR(60) NOT NULL,
-    fila         VARCHAR(15) NOT NULL,
-    numero       VARCHAR(15) NOT NULL,
-    estado       VARCHAR(30) NOT NULL DEFAULT 'DISPONIBLE',
+    idasiento BIGINT PRIMARY KEY,
+    idrecinto BIGINT NOT NULL REFERENCES recinto(idrecinto) ON DELETE CASCADE,
+    zona      VARCHAR(60) NOT NULL,
+    fila      VARCHAR(15) NOT NULL,
+    numero    VARCHAR(15) NOT NULL,
+    estado    VARCHAR(30) NOT NULL DEFAULT 'DISPONIBLE',
     UNIQUE (idrecinto, zona, fila, numero)
 );
 
 CREATE TABLE IF NOT EXISTS tarifa (
-    idtarifa     BIGSERIAL PRIMARY KEY,
-    idfuncion    BIGINT NOT NULL REFERENCES funcion(idfuncion) ON DELETE CASCADE,
-    nombre       VARCHAR(80) NOT NULL,
-    precio       NUMERIC(10, 2) NOT NULL CHECK (precio >= 0),
-    activa       BOOLEAN NOT NULL DEFAULT TRUE
+    idtarifa  BIGSERIAL PRIMARY KEY,
+    idfuncion BIGINT NOT NULL REFERENCES funcion(idfuncion) ON DELETE CASCADE,
+    nombre    VARCHAR(80) NOT NULL,
+    precio    NUMERIC(10, 2) NOT NULL CHECK (precio >= 0),
+    activa    BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS pago (
-    idpago         BIGINT PRIMARY KEY DEFAULT nextval('seq_pago'),
-    idusuario      BIGINT NOT NULL REFERENCES usuario(idusuario),
-    monto_total    NUMERIC(12, 2) NOT NULL CHECK (monto_total >= 0),
-    metodo_pago    VARCHAR(40) NOT NULL,
-    estado         VARCHAR(30) NOT NULL DEFAULT 'PAGADO',
-    fecha_pago     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    idpago      BIGINT PRIMARY KEY DEFAULT nextval('seq_pago'),
+    idusuario   BIGINT NOT NULL REFERENCES usuario(idusuario),
+    monto_total NUMERIC(12, 2) NOT NULL CHECK (monto_total >= 0),
+    metodo_pago VARCHAR(40) NOT NULL,
+    estado      VARCHAR(30) NOT NULL DEFAULT 'PAGADO',
+    fecha_pago  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS tique (
-    idtique        BIGINT PRIMARY KEY DEFAULT nextval('seq_tique'),
-    idpago         BIGINT NOT NULL REFERENCES pago(idpago),
-    idfuncion      BIGINT NOT NULL REFERENCES funcion(idfuncion),
-    idasiento      BIGINT NOT NULL REFERENCES asiento(idasiento),
-    idtarifa       BIGINT NOT NULL REFERENCES tarifa(idtarifa),
-    preciopagado   NUMERIC(10, 2) NOT NULL CHECK (preciopagado >= 0),
-    estado         VARCHAR(30) NOT NULL DEFAULT 'ACTIVO',
-    fecha_emision  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    idtique       BIGINT PRIMARY KEY DEFAULT nextval('seq_tique'),
+    idpago        BIGINT NOT NULL REFERENCES pago(idpago),
+    idfuncion     BIGINT NOT NULL REFERENCES funcion(idfuncion),
+    idasiento     BIGINT NOT NULL REFERENCES asiento(idasiento),
+    idtarifa      BIGINT NOT NULL REFERENCES tarifa(idtarifa),
+    preciopagado  NUMERIC(10, 2) NOT NULL CHECK (preciopagado >= 0),
+    estado        VARCHAR(30) NOT NULL DEFAULT 'ACTIVO',
+    fecha_emision TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (idfuncion, idasiento)
 );
 
@@ -98,9 +98,9 @@ CREATE TABLE IF NOT EXISTS auditoria_ventas (
     fecha_registro TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- -------------------------------------------------------------------------
--- PARTE 2 (COMPAÑEROS - INTEGRANTE 1 / EQUIPO BASE): DATOS SEMILLA
--- -------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------
+-- Datos iniciales de prueba
+-- ----------------------------------------------------------------------------
 INSERT INTO categoria (nombre, descripcion) VALUES
     ('Conciertos', 'Presentaciones musicales en vivo'),
     ('Teatro', 'Obras teatrales y artes escénicas')
@@ -121,21 +121,17 @@ INSERT INTO evento (idcategoria, idrecinto, titulo, descripcion, estado) VALUES
     (2, 1, 'Clásicos de Noviembre', 'Función teatral retrospectiva', 'ACTIVO')
 ON CONFLICT DO NOTHING;
 
--- Función 1: Futura (para pruebas de compra y cancelación)
--- Función 2: Pasada (para probar trigger de validación de tiempo de venta)
 INSERT INTO funcion (idevento, fecha_hora, estado) VALUES
     (1, CURRENT_TIMESTAMP + INTERVAL '7 days', 'PROGRAMADA'),
     (2, CURRENT_TIMESTAMP - INTERVAL '2 days', 'FINALIZADA')
 ON CONFLICT DO NOTHING;
 
--- 3 asientos en Recinto 1 para probar disponibilidad inicial = 3
-INSERT INTO asiento (idrecinto, zona, fila, numero, estado) VALUES
-    (1, 'VIP', 'A', '1', 'DISPONIBLE'),
-    (1, 'VIP', 'A', '2', 'DISPONIBLE'),
-    (1, 'General', 'B', '1', 'DISPONIBLE')
+INSERT INTO asiento (idasiento, idrecinto, zona, fila, numero, estado) VALUES
+    (1, 1, 'VIP', 'A', '1', 'DISPONIBLE'),
+    (2, 1, 'VIP', 'A', '2', 'DISPONIBLE'),
+    (3, 1, 'General', 'B', '1', 'DISPONIBLE')
 ON CONFLICT (idrecinto, zona, fila, numero) DO NOTHING;
 
--- Tarifas: 1 y 2 para función 1; 4 para función 2
 INSERT INTO tarifa (idfuncion, nombre, precio, activa) VALUES
     (1, 'Entrada General', 25.00, TRUE),
     (1, 'Entrada Preferencial', 40.00, TRUE),
@@ -143,11 +139,13 @@ INSERT INTO tarifa (idfuncion, nombre, precio, activa) VALUES
     (2, 'Entrada Única', 20.00, TRUE)
 ON CONFLICT DO NOTHING;
 
--- -------------------------------------------------------------------------
--- PARTE 3 (COMPAÑEROS - INTEGRANTE 1): FUNCIONES DE CONSULTA
--- -------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION fn_disponibilidad_asientos(p_idfuncion bigint)
-RETURNS bigint
+-- ----------------------------------------------------------------------------
+-- Parte 2: Funciones
+-- ----------------------------------------------------------------------------
+
+-- a) Consultar disponibilidad de asientos para una función
+CREATE OR REPLACE FUNCTION fn_disponibilidad_asientos(p_idfuncion BIGINT)
+RETURNS BIGINT
 LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -157,8 +155,8 @@ BEGIN
     SELECT COUNT(a.idasiento)
     INTO v_total_asientos
     FROM funcion f
-    INNER JOIN evento e ON e.idevento = f.idevento
-    INNER JOIN asiento a ON a.idrecinto = e.idrecinto
+    JOIN evento e ON e.idevento = f.idevento
+    JOIN asiento a ON a.idrecinto = e.idrecinto
     WHERE f.idfuncion = p_idfuncion;
 
     SELECT COUNT(t.idtique)
@@ -171,8 +169,9 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION fn_ingresos_funcion(p_idfuncion bigint)
-RETURNS numeric
+-- b) Calcular ingresos acumulados de una función
+CREATE OR REPLACE FUNCTION fn_ingresos_funcion(p_idfuncion BIGINT)
+RETURNS NUMERIC
 LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -181,7 +180,7 @@ BEGIN
     SELECT COALESCE(SUM(t.preciopagado), 0)
     INTO v_total
     FROM tique t
-    INNER JOIN pago p ON p.idpago = t.idpago
+    JOIN pago p ON p.idpago = t.idpago
     WHERE t.idfuncion = p_idfuncion
       AND t.estado <> 'CANCELADO'
       AND p.estado = 'PAGADO';
@@ -190,14 +189,16 @@ BEGIN
 END;
 $$;
 
--- -------------------------------------------------------------------------
--- PARTE 4 (TU APORTE - INTEGRANTE 3): PROCEDIMIENTOS Y TRIGGERS
--- -------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------
+-- Parte 1: Procedimientos almacenados
+-- ----------------------------------------------------------------------------
+
+-- a) Registrar la compra de uno o más tiques validando disponibilidad
 CREATE OR REPLACE PROCEDURE sp_registrar_compra(
-    p_idusuario   bigint,
-    p_idfuncion   bigint,
-    p_idtarifas   bigint[],
-    p_metodo_pago varchar
+    p_idusuario   BIGINT,
+    p_idfuncion   BIGINT,
+    p_idtarifas   BIGINT[],
+    p_metodo_pago VARCHAR
 )
 LANGUAGE plpgsql
 AS $$
@@ -212,7 +213,7 @@ DECLARE
     v_disponibles     BIGINT;
 BEGIN
     IF p_idtarifas IS NULL OR array_length(p_idtarifas, 1) IS NULL THEN
-        RAISE EXCEPTION 'Debe indicar al menos una tarifa para registrar la compra.';
+        RAISE EXCEPTION 'Debe seleccionar al menos una tarifa para realizar la compra.';
     END IF;
 
     IF NOT EXISTS (SELECT 1 FROM usuario WHERE idusuario = p_idusuario) THEN
@@ -222,7 +223,7 @@ BEGIN
     SELECT e.idrecinto
     INTO v_idrecinto
     FROM funcion f
-    INNER JOIN evento e ON e.idevento = f.idevento
+    JOIN evento e ON e.idevento = f.idevento
     WHERE f.idfuncion = p_idfuncion;
 
     IF v_idrecinto IS NULL THEN
@@ -233,11 +234,10 @@ BEGIN
     v_disponibles := fn_disponibilidad_asientos(p_idfuncion);
 
     IF v_disponibles < v_cant_solicitada THEN
-        RAISE EXCEPTION 'No hay suficientes asientos disponibles para la función % (solicitados: %, disponibles: %).',
-            p_idfuncion, v_cant_solicitada, v_disponibles;
+        RAISE EXCEPTION 'No hay suficientes asientos disponibles (solicitados: %, disponibles: %).',
+            v_cant_solicitada, v_disponibles;
     END IF;
 
-    -- Calcular monto total verificando tarifas válidas para la función
     FOREACH v_idtarifa IN ARRAY p_idtarifas
     LOOP
         SELECT precio
@@ -282,7 +282,7 @@ BEGIN
         FOR UPDATE SKIP LOCKED;
 
         IF v_idasiento IS NULL THEN
-            RAISE EXCEPTION 'No se pudo asignar un asiento disponible para la función %.', p_idfuncion;
+            RAISE EXCEPTION 'No hay asientos disponibles para asignar en la función %.', p_idfuncion;
         END IF;
 
         INSERT INTO tique (idpago, idfuncion, idasiento, idtarifa, preciopagado, estado)
@@ -295,7 +295,8 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE PROCEDURE sp_cancelar_compra(p_idpago bigint)
+-- b) Cancelar una compra y liberar los asientos asociados
+CREATE OR REPLACE PROCEDURE sp_cancelar_compra(p_idpago BIGINT)
 LANGUAGE plpgsql
 AS $$
 BEGIN
@@ -304,11 +305,11 @@ BEGIN
     END IF;
 
     IF EXISTS (SELECT 1 FROM pago WHERE idpago = p_idpago AND estado = 'CANCELADO') THEN
-        RAISE EXCEPTION 'El pago % ya se encuentra cancelado.', p_idpago;
+        RAISE EXCEPTION 'El pago % ya fue cancelado previamente.', p_idpago;
     END IF;
 
     IF NOT EXISTS (SELECT 1 FROM tique WHERE idpago = p_idpago) THEN
-        RAISE EXCEPTION 'No hay tiques asociados al pago %.', p_idpago;
+        RAISE EXCEPTION 'No existen tiques asociados al pago %.', p_idpago;
     END IF;
 
     UPDATE asiento a
@@ -328,8 +329,13 @@ BEGIN
 END;
 $$;
 
+-- ----------------------------------------------------------------------------
+-- Parte 3: Disparadores (Triggers)
+-- ----------------------------------------------------------------------------
+
+-- a) Auditoría automática de ventas de tiques
 CREATE OR REPLACE FUNCTION fn_trigger_auditoria_ventas()
-RETURNS trigger
+RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
 BEGIN
@@ -360,12 +366,13 @@ AFTER INSERT ON tique
 FOR EACH ROW
 EXECUTE FUNCTION fn_trigger_auditoria_ventas();
 
+-- b) Impedir la venta de tiques si la función ya pasó o finalizó
 CREATE OR REPLACE FUNCTION fn_trigger_validar_tiempo_venta()
-RETURNS trigger
+RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_fecha_funcion TIMESTAMP;
+    v_fecha_funcion  TIMESTAMP;
     v_estado_funcion VARCHAR(30);
 BEGIN
     SELECT fecha_hora, estado
